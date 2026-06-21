@@ -133,7 +133,7 @@ for col in categorical_cols:
 
     print(f"{col}: {mapping}")
 
-# Save encoders
+# Save encoders locally
 joblib.dump(label_encoders, "label_encoders.joblib")
 print("Label encoders saved.")
 
@@ -175,6 +175,13 @@ for file_path in files:
         repo_id="RadhaNK/Tourism",
         repo_type="dataset",
     )
+api.upload_file(
+    path_or_fileobj="label_encoders.joblib",
+    path_in_repo="label_encoders.joblib",
+    repo_id="RadhaNK/tourism_model",
+    repo_type="model"
+)
+
 
 print("\nPreprocessing completed successfully.")
 print("Train-test datasets and encoders uploaded to Hugging Face.")
