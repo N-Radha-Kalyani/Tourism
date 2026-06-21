@@ -214,6 +214,12 @@ if st.button("Predict"):
             "MonthlyIncome": monthly_income
         }])
 
+        print(ytrain.iloc[:,0].value_counts())
+        print(ytrain.iloc[:,0].value_counts(normalize=True))
+
+        preds = best_model.predict(Xtest)
+        print(preds.min(), preds.max(), preds.mean())
+
         st.subheader("Input Sent to Model")
 
         st.dataframe(input_df)
