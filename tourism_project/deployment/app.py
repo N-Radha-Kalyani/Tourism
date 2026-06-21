@@ -14,7 +14,7 @@ st.set_page_config(
 @st.cache_resource
 def load_model():
     model_path = hf_hub_download(
-        repo_id="RadhaNK/Tourism",
+        repo_id="RadhaNK/toursim_model",
         filename="best_tourism_model_v1.joblib"
     )
     return joblib.load(model_path)
