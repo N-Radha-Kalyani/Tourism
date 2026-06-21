@@ -106,6 +106,64 @@ with mlflow.start_run():
     y_pred_train = best_model.predict(Xtrain)
     y_pred_test = best_model.predict(Xtest)
 
+
+    # ==========================================
+    # Target Variable Diagnostics
+    # ==========================================
+    print("\n" + "=" * 60)
+    print("TARGET VARIABLE DISTRIBUTION")
+    print("=" * 60)
+
+    print("\nAbsolute Counts:")
+    print(ytrain.iloc[:, 0].value_counts())
+
+    print("\nPercentage Distribution:")
+    print(
+        (ytrain.iloc[:, 0].value_counts(normalize=True) * 100)
+        .round(2)
+        .astype(str) + "%"
+    )
+
+    print("\nTarget Labels Meaning:")
+    print("0 = Customer did NOT purchase the package")
+    print("1 = Customer purchased the package")
+
+
+    # ==========================================
+    # Prediction Diagnostics
+    # ==========================================
+    preds = best_model.predict(Xtest)
+
+    print("\n" + "=" * 60)
+    print("MODEL PREDICTION DIAGNOSTICS")
+    print("=" * 60)
+
+    print(f"\nMinimum Prediction Value : {preds.min():.6f}")
+    print(f"Maximum Prediction Value : {preds.max():.6f}")
+    print(f"Average Prediction Value : {preds.mean():.6f}")
+
+    print("\nFirst 20 Predictions:")
+    print(preds[:20])
+
+    print("\nPredictions >= 0.50 :", (preds >= 0.5).sum())
+    print("Predictions < 0.50  :", (preds < 0.5).sum())
+    print(f"Total Predictions    : {len(preds)}")
+
+
+    print("\nActual Test Distribution:")
+    print(ytest.iloc[:, 0].value_counts())
+
+    print("\nActual Test Distribution (%):")
+    print(
+        (ytest.iloc[:, 0].value_counts(normalize=True) * 100)
+        .round(2)
+        .astype(str) + "%"
+    )
+
+    print("\n" + "=" * 60)
+
+    
+
     # Metrics
     train_rmse = mean_squared_error(ytrain, y_pred_train)
     test_rmse = mean_squared_error(ytest, y_pred_test)
