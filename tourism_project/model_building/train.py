@@ -32,6 +32,33 @@ Xtest = pd.read_csv(Xtest_path)
 ytrain = pd.read_csv(ytrain_path)
 ytest = pd.read_csv(ytest_path)
 
+# Numerical columns
+numerical_cols = [
+    'Age',
+    'CityTier',
+    'DurationOfPitch',
+    'NumberOfPersonVisiting',
+    'NumberOfFollowups',
+    'PreferredPropertyStar',
+    'NumberOfTrips',
+    'Passport',
+    'PitchSatisfactionScore',
+    'OwnCar',
+    'NumberOfChildrenVisiting',
+    'MonthlyIncome'
+]
+
+
+# Categorical columns
+categorical_cols = [
+    'TypeofContact',
+    'Occupation',
+    'Gender',
+    'ProductPitched',
+    'MaritalStatus',
+    'Designation'
+]
+
 
 # Preprocessor
 preprocessor = make_column_transformer(
