@@ -19,13 +19,13 @@ st.set_page_config(
 def load_artifacts():
     try:
         model_path = hf_hub_download(
-            repo_id="RadhaNK/tourism-model",
+            repo_id="RadhaNK/tourism_model",
             repo_type="model",
             filename="best_tourism_model_v1.joblib"
         )
 
         encoder_path = hf_hub_download(
-            repo_id="RadhaNK/tourism-model",
+            repo_id="RadhaNK/tourism_model",
             repo_type="model",
             filename="label_encoders.joblib"
         )
