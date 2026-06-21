@@ -214,35 +214,14 @@ if st.button("Predict"):
             "MonthlyIncome": monthly_income
         }])
 
-        print(ytrain.iloc[:,0].value_counts())
-        print(ytrain.iloc[:,0].value_counts(normalize=True))
 
-        preds = best_model.predict(Xtest)
-        print(preds.min(), preds.max(), preds.mean())
 
         st.subheader("Input Sent to Model")
 
         st.dataframe(input_df)
 
-        raw_prediction = model.predict(input_df)[0]
-
-        st.write("Raw Model Output:", raw_prediction)
-
-        # Since you trained a REGRESSOR
-        prediction = 1 if raw_prediction >= 0.5 else 0
-
-        st.write("Final Prediction:", prediction)
-
-        st.divider()
-
-        if prediction == 1:
-            st.success(
-                "✅ Customer is likely to purchase."
-            )
-        else:
-            st.warning(
-                "❌ Customer is unlikely to purchase."
-            )
-
-    except Exception as e:
-        st.error(f"Prediction Error: {e}")
+        prediction = model.predict(input_data)[0]
+        st.write("Raw Model Output:", prediction)
+        result = "Machine Failure" if prediction == 1 else "No Failure"
+        st.subheader("Prediction Result:")
+        st.success(f"The model predicts: **{result}**")

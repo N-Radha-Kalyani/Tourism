@@ -60,6 +60,10 @@ categorical_cols = [
 ]
 
 
+# Set the clas weight to handle class imbalance
+class_weight = ytrain.value_counts()[0] / ytrain.value_counts()[1]
+class_weight
+
 # Preprocessor
 preprocessor = make_column_transformer(
     (StandardScaler(), numerical_cols),
@@ -67,121 +71,68 @@ preprocessor = make_column_transformer(
 )
 
 
-# Define base XGBoost Regressor
-xgb_model = xgb.XGBRegressor(random_state=42, n_jobs=-1)
 
-# Hyperparameter grid
+# Define base XGBoost model
+xgb_model = xgb.XGBClassifier(scale_pos_weight=class_weight, random_state=42)
+
+
+# Define hyperparameter grid
 param_grid = {
-    'xgbregressor__n_estimators': [50, 100],
-    'xgbregressor__max_depth': [3, 5],
-    'xgbregressor__learning_rate': [0.01, 0.05],
-    'xgbregressor__subsample': [0.7, 0.8],
-    'xgbregressor__colsample_bytree': [0.7, 0.8],
-    'xgbregressor__reg_lambda': [0.1, 1]
+    'xgbclassifier__n_estimators': [50, 75, 100],
+    'xgbclassifier__max_depth': [2, 3, 4],
+    'xgbclassifier__colsample_bytree': [0.4, 0.5, 0.6],
+    'xgbclassifier__colsample_bylevel': [0.4, 0.5, 0.6],
+    'xgbclassifier__learning_rate': [0.01, 0.05, 0.1],
+    'xgbclassifier__reg_lambda': [0.4, 0.5, 0.6],
 }
 
-# Pipeline
+# Model pipeline
 model_pipeline = make_pipeline(preprocessor, xgb_model)
 
 with mlflow.start_run():
-    # Grid Search
-    grid_search = GridSearchCV(model_pipeline, param_grid, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
+    # Hyperparameter tuning
+    grid_search = GridSearchCV(model_pipeline, param_grid, cv=5, n_jobs=-1)
     grid_search.fit(Xtrain, ytrain)
 
-    # Log parameter sets
+    # Log all parameter combinations and their mean test scores
     results = grid_search.cv_results_
     for i in range(len(results['params'])):
         param_set = results['params'][i]
         mean_score = results['mean_test_score'][i]
+        std_score = results['std_test_score'][i]
 
+        # Log each combination as a separate MLflow run
         with mlflow.start_run(nested=True):
             mlflow.log_params(param_set)
-            mlflow.log_metric("mean_neg_mse", mean_score)
+            mlflow.log_metric("mean_test_score", mean_score)
+            mlflow.log_metric("std_test_score", std_score)
 
-    # Best model
+    # Log best parameters separately in main run
     mlflow.log_params(grid_search.best_params_)
+
+    # Store and evaluate the best model
     best_model = grid_search.best_estimator_
 
-    # Predictions
-    y_pred_train = best_model.predict(Xtrain)
-    y_pred_test = best_model.predict(Xtest)
+    classification_threshold = 0.45
 
+    y_pred_train_proba = best_model.predict_proba(Xtrain)[:, 1]
+    y_pred_train = (y_pred_train_proba >= classification_threshold).astype(int)
 
-    # ==========================================
-    # Target Variable Diagnostics
-    # ==========================================
-    print("\n" + "=" * 60)
-    print("TARGET VARIABLE DISTRIBUTION")
-    print("=" * 60)
+    y_pred_test_proba = best_model.predict_proba(Xtest)[:, 1]
+    y_pred_test = (y_pred_test_proba >= classification_threshold).astype(int)
 
-    print("\nAbsolute Counts:")
-    print(ytrain.iloc[:, 0].value_counts())
+    train_report = classification_report(ytrain, y_pred_train, output_dict=True)
+    test_report = classification_report(ytest, y_pred_test, output_dict=True)
 
-    print("\nPercentage Distribution:")
-    print(
-        (ytrain.iloc[:, 0].value_counts(normalize=True) * 100)
-        .round(2)
-        .astype(str) + "%"
-    )
-
-    print("\nTarget Labels Meaning:")
-    print("0 = Customer did NOT purchase the package")
-    print("1 = Customer purchased the package")
-
-
-    # ==========================================
-    # Prediction Diagnostics
-    # ==========================================
-    preds = best_model.predict(Xtest)
-
-    print("\n" + "=" * 60)
-    print("MODEL PREDICTION DIAGNOSTICS")
-    print("=" * 60)
-
-    print(f"\nMinimum Prediction Value : {preds.min():.6f}")
-    print(f"Maximum Prediction Value : {preds.max():.6f}")
-    print(f"Average Prediction Value : {preds.mean():.6f}")
-
-    print("\nFirst 20 Predictions:")
-    print(preds[:20])
-
-    print("\nPredictions >= 0.50 :", (preds >= 0.5).sum())
-    print("Predictions < 0.50  :", (preds < 0.5).sum())
-    print(f"Total Predictions    : {len(preds)}")
-
-
-    print("\nActual Test Distribution:")
-    print(ytest.iloc[:, 0].value_counts())
-
-    print("\nActual Test Distribution (%):")
-    print(
-        (ytest.iloc[:, 0].value_counts(normalize=True) * 100)
-        .round(2)
-        .astype(str) + "%"
-    )
-
-    print("\n" + "=" * 60)
-
-    
-
-    # Metrics
-    train_rmse = mean_squared_error(ytrain, y_pred_train)
-    test_rmse = mean_squared_error(ytest, y_pred_test)
-
-    train_mae = mean_absolute_error(ytrain, y_pred_train)
-    test_mae = mean_absolute_error(ytest, y_pred_test)
-
-    train_r2 = r2_score(ytrain, y_pred_train)
-    test_r2 = r2_score(ytest, y_pred_test)
-
-    # Log metrics
     mlflow.log_metrics({
-        "train_RMSE": train_rmse,
-        "test_RMSE": test_rmse,
-        "train_MAE": train_mae,
-        "test_MAE": test_mae,
-        "train_R2": train_r2,
-        "test_R2": test_r2
+        "train_accuracy": train_report['accuracy'],
+        "train_precision": train_report['1']['precision'],
+        "train_recall": train_report['1']['recall'],
+        "train_f1-score": train_report['1']['f1-score'],
+        "test_accuracy": test_report['accuracy'],
+        "test_precision": test_report['1']['precision'],
+        "test_recall": test_report['1']['recall'],
+        "test_f1-score": test_report['1']['f1-score']
     })
 
     # Save the model locally
