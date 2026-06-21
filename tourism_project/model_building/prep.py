@@ -133,6 +133,10 @@ for col in categorical_cols:
 
     print(f"{col}: {mapping}")
 
+# Save encoders
+joblib.dump(label_encoders, "label_encoders.joblib")
+print("Label encoders saved.")
+
 # Define target
 target = 'ProdTaken'
 
