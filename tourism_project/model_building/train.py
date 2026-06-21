@@ -22,6 +22,7 @@ mlflow.set_experiment("mlops-training-experiment")
 
 api = HfApi()
 
+#load the test files
 
 Xtrain_path = "hf://datasets/RadhaNK/Tourism/Xtrain.csv"
 Xtest_path = "hf://datasets/RadhaNK/Tourism/Xtest.csv"

@@ -185,7 +185,6 @@ with col4:
         20
     )
 
-
 # -------------------------
 # Prediction
 # -------------------------
@@ -214,14 +213,34 @@ if st.button("Predict"):
             "MonthlyIncome": monthly_income
         }])
 
-
-
         st.subheader("Input Sent to Model")
-
         st.dataframe(input_df)
 
-        prediction = model.predict(input_data)[0]
-        st.write("Raw Model Output:", prediction)
-        result = "Machine Failure" if prediction == 1 else "No Failure"
-        st.subheader("Prediction Result:")
-        st.success(f"The model predicts: **{result}**")
+        # Probability prediction
+        if hasattr(model, "predict_proba"):
+            probability = model.predict_proba(input_df)[0][1]
+            prediction = int(probability >= 0.45)
+
+            st.write("Purchase Probability:", f"{probability:.2%}")
+        else:
+            prediction = int(model.predict(input_df)[0])
+            st.write("Raw Prediction:", prediction)
+
+        st.write("Final Prediction:", prediction)
+
+        st.subheader("Prediction Result")
+
+        if prediction == 1:
+            st.success(
+                "✅ This customer is likely to purchase the Wellness Tourism Package."
+            )
+        else:
+            st.warning(
+                "❌ This customer is unlikely to purchase the Wellness Tourism Package."
+            )
+
+    except Exception as e:
+        st.error(f"Prediction Error: {e}")
+
+        st.subheader("Input Causing Error")
+        st.dataframe(input_df)
